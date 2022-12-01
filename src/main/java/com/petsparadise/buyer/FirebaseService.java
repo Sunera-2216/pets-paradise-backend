@@ -5,10 +5,13 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.petsparadise.cart.Cart;
+import com.petsparadise.admin.Admin;
 import com.petsparadise.store.Store;
 import com.petsparadise.product.Accessories;
 import com.petsparadise.product.Pet;
 import com.petsparadise.product.Product;
+import com.petsparadise.request.Request;
 import com.petsparadise.seller.Seller;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -26,10 +29,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class FirebaseService {
-    private Buyer person, loginBuyer, buyer;
-    private Seller loggedSeller;
-    private Accessories acc;
+    private Buyer person, loggedUser;
+    private Seller loggedSeller, seller;
+    private Admin loggedAdmin;
     private Pet pett;
+   
     
     @Autowired
     FirebaseInitialization firebaseInitialization;
@@ -41,7 +45,7 @@ public class FirebaseService {
      * @throws InterruptedException
      * @throws ExecutionException 
      */
-    public String createBuyer(Buyer person) throws InterruptedException, ExecutionException{
+    public Buyer createBuyer(Buyer buyer) throws InterruptedException, ExecutionException{
         DatabaseReference database = FirebaseDatabase.getInstance().getReference("buyer");
         
         String hashedPassword;
@@ -53,13 +57,13 @@ public class FirebaseService {
         }
         
         String key = database.push().getKey();
-        //buyer.setbId(key);
+        buyer.setbId(key);
         
         database.child(key).setValue(buyer, (DatabaseError de, DatabaseReference dr) -> {
             
         });
         
-        return "SUCCESS";
+        return buyer;
     }
     
     /**
@@ -201,6 +205,48 @@ public class FirebaseService {
         return firebaseInitialization.uploadItemImage(file);
     }
     
+    
+    /**
+     * 
+     * @param cart
+     * @return 
+     */
+    public Cart addCart(Cart cart) {
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference("cart");
+        
+        String key = database.push().getKey();
+        cart.setCartId(key);
+        
+        database.child(key).setValue(cart, (DatabaseError de, DatabaseReference dr) -> {
+            
+        });
+        
+        return cart;
+    }
+    
+    public Request requestPet(Request request) {
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference("request");
+        
+        String key = database.push().getKey();
+        request.setRequestId(key);
+        
+        database.child(key).setValue(request, (DatabaseError de, DatabaseReference dr) -> {
+            
+        });
+        
+        return request;
+    }
+    
+     /**
+     * 
+     * @param file
+     * @return
+     * @throws IOException 
+     */
+    public String uploadRequestPetImages(MultipartFile file) throws IOException {
+        return firebaseInitialization.uploadRequestPetImage(file);
+    }
+    
     /**
      * 
      * @param buyer
@@ -213,12 +259,11 @@ public class FirebaseService {
             @Override
             public void onDataChange(DataSnapshot ds) {
                 for (DataSnapshot snapshot : ds.getChildren()) {
-                    loginBuyer = null;
+                    loggedUser = null;
                     
                     Buyer buy = snapshot.getValue(Buyer.class);
                     
                     String hashedPassword = null;
-                    
                     try {
                         hashedPassword = HashPassword.toHexString(HashPassword.getSHA(buyer.getPassword()));
                     } catch (NoSuchAlgorithmException ex) {
@@ -226,8 +271,9 @@ public class FirebaseService {
                     }
                     
                     if (buy != null) {
-                        if (buy.getEmail().equals(buyer.getEmail()) && buy.getPassword().equals(hashedPassword)) {
-                            loginBuyer = buy;
+                        if (buy.getEmail().equals(buyer.getEmail()) && 
+                                buy.getPassword().equals(hashedPassword)) {
+                            loggedUser = buy;
                         }
                     }
                 }
@@ -245,7 +291,7 @@ public class FirebaseService {
             Logger.getLogger(FirebaseService.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        return loginBuyer;
+        return loggedUser;
     }
     
     /**
@@ -295,6 +341,48 @@ public class FirebaseService {
         return loggedSeller;
     }
     
+    
+       /**
+     * 
+     * @param admin
+     * @return 
+     */
+    public Admin validateLogin(Admin admin) {
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference("admin");
+        
+        database.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot ds) {
+                for (DataSnapshot snapshot : ds.getChildren()) {
+                    loggedAdmin = null;
+                    
+                    Admin admin = snapshot.getValue(Admin.class);
+                                    
+                    if (admin != null) {
+                        if (admin.getEmail().equals(admin.getEmail()) && 
+                                admin.getPassword().equals(admin.getPassword())) {
+                            loggedAdmin = admin;
+                        }
+                    }
+                }
+            }
+            
+            @Override
+            public void onCancelled(DatabaseError de) {
+                
+            }
+        });
+        
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(FirebaseService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return loggedAdmin;
+    }
+    
+    
     /**
      * 
      * @return 
@@ -328,6 +416,41 @@ public class FirebaseService {
         }
                 
         return list;
+    }
+    
+      /**
+     * 
+     * @return 
+     */
+    public List<Seller> getSeller() {
+        List<Seller> sellerList = new ArrayList<>();
+        
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference("seller");
+        
+        database.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot ds) {
+                sellerList.clear();
+                
+                for (DataSnapshot snapshot : ds.getChildren()) {
+                    seller = snapshot.getValue(Seller.class);
+                    sellerList.add(seller);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError de) {
+                
+            }
+        });
+        
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(FirebaseService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+                
+        return sellerList;
     }
     
     /**
@@ -444,6 +567,89 @@ public class FirebaseService {
         
         return itemList;
     }
+   
+
+    public List<Cart> getCartList(String bId) {
+        List<Cart> cartList = new ArrayList<>();
+        
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference("cart");
+        
+        database.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot ds) {
+                cartList.clear();
+                for (DataSnapshot snapshot : ds.getChildren()) {
+                    Cart cart = snapshot.getValue(Cart.class);
+                    System.out.println(cart.getBuyer().getbId());
+                    
+                    if (cart != null && cart.getBuyer().getbId().equals(bId)) {
+                        cartList.add(cart);
+                        System.out.println(cart.getBuyer().getFname());
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError de) {
+                
+            }
+        });
+        
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(FirebaseService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return cartList;
+    }
+    
+    public Cart removeItem(Cart cart) {
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference("cart");
+        
+        database.child(cart.getCartId()).removeValue((DatabaseError de, DatabaseReference dr) -> {
+            System.out.println(cart.getCartId());
+        });
+//        
+//        try {
+//            Thread.sleep(2000);
+//        } catch (InterruptedException ex) {
+//            Logger.getLogger(FirebaseService.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+        
+        return cart;
+    }
+    
+    public List<Request> getRequestDetails() {
+        List<Request> requestList = new ArrayList<>();
+        
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference("request");
+        
+        database.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot ds) {
+                requestList.clear();
+                
+                for (DataSnapshot snapshot : ds.getChildren()) {
+                    Request request = snapshot.getValue(Request.class);
+                    requestList.add(request);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError de) {
+                
+            }
+        });
+        
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(FirebaseService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+                
+        return requestList;
+    }
+          
     
     public List<Product> searchProduct(String keyword) {
         List<Product> productList = new ArrayList<>();
@@ -508,20 +714,6 @@ public class FirebaseService {
         return productList;
     }
     
-    public List<Product> searchPredictedProduct(String predictedKeyword) {
-        String keyword = predictedKeyword.split(" ")[0];
-        System.out.println(keyword);
-        
-        keyword = keyword.replace("_", " ");
-        System.out.println(keyword);
-        
-        //keyword = keyword.split(" ")[0].toLowerCase();
-        //System.out.println(keyword);
-
-        List<Product> list = searchProduct(keyword);
-        return list;
-    }
-    
     public List<Product> filterCategor(String selectedCategory) {
         DatabaseReference ref = null;
         List<Product> filterList = new ArrayList<>();
@@ -561,38 +753,18 @@ public class FirebaseService {
         return filterList;
     }
     
-    public Accessories getItemDetails(String itemId) {
-        DatabaseReference ref = null;
+    public List<Product> searchPredictedProduct(String predictedKeyword) {
+        String keyword = predictedKeyword.split(" ")[0];
+        System.out.println(keyword);
         
-        ref = FirebaseDatabase.getInstance().getReference("products/pets-accessories");
+        keyword = keyword.replace("_", " ");
+        System.out.println(keyword);
         
-        ref.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot ds) {
-                for (DataSnapshot snapshot : ds.getChildren()) {
-                    Accessories pro = snapshot.getValue(Accessories.class);
-                    
-                    if (pro != null) {
-                        if (pro.getId().equals(itemId)) {
-                            acc = pro;
-                        }
-                    }
-                }
-            }
-          
-            @Override
-            public void onCancelled(DatabaseError de) {
-                
-            }
-        });
-        
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(FirebaseService.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        return acc;
+        //keyword = keyword.split(" ")[0].toLowerCase();
+        //System.out.println(keyword);
+
+        List<Product> list = searchProduct(keyword);
+        return list;
     }
     
     public Pet getPetDetails(String petId) {
@@ -687,5 +859,7 @@ public class FirebaseService {
         return allItems;
     }
 
+     
+  
 }
 

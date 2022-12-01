@@ -159,6 +159,32 @@ public class FirebaseInitialization {
      * @return
      * @throws IOException 
      */
+    public String uploadRequestPetImage(MultipartFile file) throws IOException{
+        String imageName = generateFileName(file.getOriginalFilename());
+        
+        Map<String, String> map = new HashMap<>();
+        map.put("firebaseStorageDownloadTokens", imageName);
+        
+        BlobId blobId = BlobId.of("pets-paradise-527b8.appspot.com", "request-pet-images/" + imageName);
+        
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                .setMetadata(map)
+                .setContentType(file.getContentType())
+                .build();
+        storage.create(blobInfo, file.getInputStream());
+        
+        URL url = storage.signUrl(blobInfo, 5, TimeUnit.DAYS, Storage.SignUrlOption.withV4Signature());
+        String signedPath = url.toString();
+        
+        return signedPath;
+    }
+    
+    /**
+     * 
+     * @param file
+     * @return
+     * @throws IOException 
+     */
     public String uploadItemImage(MultipartFile file) throws IOException{
         String imageName = generateFileName(file.getOriginalFilename());
         

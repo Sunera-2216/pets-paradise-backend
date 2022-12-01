@@ -1,7 +1,7 @@
 package com.petsparadise.buyer;
 
 public class Buyer {
-    private String email;
+    private String email,bId;
     private String password;
     private String contact_number;
     private String fname;
@@ -15,7 +15,15 @@ public class Buyer {
     public void setAddress(String address) {
         this.address = address;
     }
-         
+
+    public String getbId() {
+        return bId;
+    }
+
+    public void setbId(String bId) {
+        this.bId = bId;
+    }
+     
     public String getEmail() {
         return email;
     }

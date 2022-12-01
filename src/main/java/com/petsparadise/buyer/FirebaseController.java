@@ -1,9 +1,12 @@
 package com.petsparadise.buyer;
 
+import com.petsparadise.cart.Cart;
+import com.petsparadise.admin.Admin;
 import com.petsparadise.store.Store;
 import com.petsparadise.product.Accessories;
 import com.petsparadise.product.Pet;
 import com.petsparadise.product.Product;
+import com.petsparadise.request.Request;
 import com.petsparadise.seller.Seller;
 import java.io.IOException;
 import java.util.List;
@@ -37,8 +40,8 @@ public class FirebaseController {
      */
     @CrossOrigin(origins = "http://localhost:4200")
     @PostMapping("/create-buyer")
-    public String createBuyer(@RequestBody Buyer person) throws InterruptedException, ExecutionException{
-        return firebaseService.createBuyer(person);
+    public Buyer createBuyer(@RequestBody Buyer buyer) throws InterruptedException, ExecutionException{
+        return firebaseService.createBuyer(buyer);
     }
     
     /**
@@ -226,6 +229,60 @@ public class FirebaseController {
     
     /**
      * 
+     * @param cart
+     * @return
+     * @throws InterruptedException
+     * @throws ExecutionException 
+     */
+    @CrossOrigin(origins = "http://localhost:4200")
+    @PostMapping("/addto-cart")
+    public Cart addCart(@RequestBody Cart cart) throws InterruptedException, ExecutionException{
+        return firebaseService.addCart(cart);
+    }
+    
+    /**
+     * 
+     * @param requset
+     * @return
+     * @throws InterruptedException
+     * @throws ExecutionException 
+     */
+    @CrossOrigin(origins = "http://localhost:4200")
+    @PostMapping("/request")
+    public Request requestPet(@RequestBody Request request) throws InterruptedException, ExecutionException{
+         for (;;) {
+            if (!petImageUrl.equals("")) {
+                request.setImageUrl(petImageUrl);
+                break;
+            }
+        }
+        return firebaseService.requestPet(request);
+    }
+    
+    /**
+     * 
+     * @param file
+     * @return
+     * @throws IOException 
+     */
+    @CrossOrigin(origins = "http://localhost:4200")
+    @RequestMapping(value = "/upload-request-pet-image", method = RequestMethod.POST)
+    public String uploadReqestPetImage(@RequestParam("file") MultipartFile file) throws IOException{
+        String s = "";
+        s = firebaseService.uploadRequestPetImages(file);
+        
+        for (;;) {
+            if (!s.equals("")) {
+                petImageUrl = s;
+                break;
+            }
+        }
+
+        return s;
+    }
+    
+    /**
+     * 
      * @param buyer
      * @return 
      */
@@ -246,15 +303,30 @@ public class FirebaseController {
         return firebaseService.validateLogin(seller);
     }
     
+    
+    @CrossOrigin(origins = "http://localhost:4200")
+    @PostMapping("/admin-login")
+    public Admin loginAdmin(@RequestBody Admin admin){
+        return firebaseService.validateLogin(admin);
+    }
+    
     /**
      * 
      * @param sellerId
      * @return 
      */
+    @CrossOrigin(origins = "http://localhost:4200")
     @PostMapping("/get-stores")
     public List<Store> getStores(@RequestBody String sellerId) {
         return firebaseService.getStores(sellerId);
     }
+    
+    @CrossOrigin(origins = "http://localhost:4200")
+    @GetMapping("/get-request")
+    public List<Request> getRequestDetails() {
+        return firebaseService.getRequestDetails();
+    }
+    
     
     /**
      * 
@@ -278,6 +350,19 @@ public class FirebaseController {
         return firebaseService.getItems(storeId);
     }
     
+
+    @CrossOrigin(origins = "http://localhost:4200")
+    @PostMapping("/get-cart-list")
+    public List<Cart> getCartList(@RequestBody String bId) {
+        return firebaseService.getCartList(bId);
+    }
+    
+    
+    @CrossOrigin(origins = "http://localhost:4200")
+    @PostMapping("/remove-item")
+    public Cart removeItem(@RequestBody Cart cart) {
+        return firebaseService.removeItem(cart);
+    }
     /**
      * 
      * @param keyword
@@ -287,12 +372,6 @@ public class FirebaseController {
     @PostMapping("/search-product")
     public List<Product> searchProduct(@RequestBody String keyword) {
         return firebaseService.searchProduct(keyword);
-    }
-    
-    @CrossOrigin(origins = "http://localhost:4200")
-    @PostMapping("/predict")
-    public List<Product> predict(@RequestBody String predictedKeyword) {
-        return firebaseService.searchPredictedProduct(predictedKeyword);
     }
     
     /**
@@ -307,9 +386,9 @@ public class FirebaseController {
     }
     
     @CrossOrigin(origins = "http://localhost:4200")
-    @PostMapping("/get-item-details")
-    public Accessories getItemDetails(@RequestBody String itemId) {
-        return firebaseService.getItemDetails(itemId);
+    @PostMapping("/predict")
+    public List<Product> predict(@RequestBody String predictedKeyword) {
+        return firebaseService.searchPredictedProduct(predictedKeyword);
     }
     
     @CrossOrigin(origins = "http://localhost:4200")
@@ -340,9 +419,18 @@ public class FirebaseController {
      * 
      * @return 
      */
-    @GetMapping("/get-buyers")
+    @GetMapping("/get-buyer")
     public List<Buyer> getBuyer() {
         return firebaseService.getBuyers();
+    }
+    
+    /**
+     * 
+     * @return 
+     */
+    @GetMapping("/get-seller")
+    public List<Seller> getSeller() {
+        return firebaseService.getSeller();
     }
     
 //    @CrossOrigin(origins = "http://localhost:4200")
