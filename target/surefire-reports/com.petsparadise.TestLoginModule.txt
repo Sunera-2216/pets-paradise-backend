@@ -1,0 +1,8 @@
+-------------------------------------------------------------------------------
+Test set: com.petsparadise.TestLoginModule
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 2.538 s <<< FAILURE! - in com.petsparadise.TestLoginModule
+testGetPetDetails  Time elapsed: 2.531 s  <<< ERROR!
+java.lang.NullPointerException
+	at com.petsparadise.TestLoginModule.testGetPetDetails(TestLoginModule.java:31)
+
